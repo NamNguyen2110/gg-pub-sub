@@ -7,10 +7,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 import org.springframework.cloud.gcp.pubsub.integration.inbound.PubSubInboundChannelAdapter;
+import org.springframework.cloud.gcp.pubsub.integration.outbound.PubSubMessageHandler;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 
 @SpringBootApplication
 public class MyGcpSubPlanetApplication {
@@ -26,7 +29,7 @@ public class MyGcpSubPlanetApplication {
 			@Qualifier("myInputChannel") MessageChannel inputChannel,
 			PubSubTemplate pubSubTemplate) {
 		PubSubInboundChannelAdapter adapter =
-				new PubSubInboundChannelAdapter(pubSubTemplate, "mySubscription");
+				new PubSubInboundChannelAdapter(pubSubTemplate, "test-sub");
 		adapter.setOutputChannel(inputChannel);
 
 		return adapter;
@@ -39,9 +42,20 @@ public class MyGcpSubPlanetApplication {
 
 
 	@ServiceActivator(inputChannel = "myInputChannel")
-	public void messageReceiver(String payload) {
+	public String messageReceiver(String payload) {
 		LOGGER.info("Message arrived! Payload: " + payload);
+		return payload;
+	}
 
+	@Bean
+	@ServiceActivator(inputChannel = "myOutputChannel")
+	public MessageHandler messageSender(PubSubTemplate pubsubTemplate) {
+		return new PubSubMessageHandler(pubsubTemplate, "topic-test");
+	}
+
+	@MessagingGateway(defaultRequestChannel = "myOutputChannel")
+	public interface PubsubOutboundGateway {
+		void sendToPubsub(String text);
 	}
 
 }
