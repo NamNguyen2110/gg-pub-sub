@@ -9,11 +9,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @RestController
 public class MessageController {
     @Autowired
-    private MyGcpSubPlanetApplication.PubsubOutboundGateway messagingGateway;
+    private PubSubConfig.PubSubOutboundGateway pubSubOutboundGateway;
 
     @PostMapping("/postMessage")
     public RedirectView publishMessage(@RequestParam("message") String message) {
-        messagingGateway.sendToPubsub(message);
+        pubSubOutboundGateway.sendToPubSub(message);
         return new RedirectView("/");
     }
 }
